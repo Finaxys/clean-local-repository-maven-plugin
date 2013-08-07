@@ -1,5 +1,5 @@
-maven-clean-local-repository
-============================
+clean-local-repository-maven-plugin
+===================================
 
 The « clean local repository plugin » provides the capability to delete and parametrized deletion of
 artifacts from the local maven repository.
