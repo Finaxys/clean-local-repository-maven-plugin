@@ -39,8 +39,6 @@ import org.apache.maven.project.MavenProject;
  * The greater part of the plugin implementation is here because of the commons behavior 
  * of its different goals.
  * 
- * @phase process-sources
- * 
  * @version $Id$
  * 
  * @author sgu, pef, lab...
@@ -157,7 +155,6 @@ public abstract class AbstractLocalRepositoryMojo extends AbstractMojo
 	 * 
 	 * @parameter expression="${project}" 
 	 * @readonly 
-	 * @required
 	 */ 
 	private MavenProject project; 
 	

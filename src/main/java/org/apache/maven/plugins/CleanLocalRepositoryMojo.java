@@ -26,6 +26,8 @@ import org.apache.maven.plugin.MojoFailureException;
  * 
  * @phase process-sources
  * 
+ * @requiresProject false
+ * 
  * @version $Id$
  * 
  * @author sgu, pef, lab...
