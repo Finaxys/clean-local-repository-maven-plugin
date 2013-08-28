@@ -100,7 +100,7 @@ public class TestLocalRepositoryMojo extends AbstractMojoTestCase {
      */
     public void testSnapshotRetentionDelay() throws Exception
     {        
-        setVariableValueToObject(cleanLocalRepositoryMojo, "deleteSnapshot", true);
+        setVariableValueToObject(cleanLocalRepositoryMojo, "deleteCurrentSnapshot", true);
         setVariableValueToObject(cleanLocalRepositoryMojo, "snapshotRetentionDelay", 1);
         setVariableValueToObject(cleanLocalRepositoryMojo, "snapshotVersionsRetention", DESACTIVATIVED);
 		
@@ -126,7 +126,7 @@ public class TestLocalRepositoryMojo extends AbstractMojoTestCase {
     public void testSnapshotVersionsRetention() throws Exception
     {
     	
-        setVariableValueToObject(cleanLocalRepositoryMojo, "deleteSnapshot", true);
+        setVariableValueToObject(cleanLocalRepositoryMojo, "deleteCurrentSnapshot", true);
         setVariableValueToObject(cleanLocalRepositoryMojo, "snapshotRetentionDelay", DESACTIVATIVED);
         setVariableValueToObject(cleanLocalRepositoryMojo, "snapshotVersionsRetention", 2);
 		
@@ -152,7 +152,7 @@ public class TestLocalRepositoryMojo extends AbstractMojoTestCase {
     public void testReleaseRetentionDelay() throws Exception
     {
     	
-        setVariableValueToObject(cleanLocalRepositoryMojo, "deleteRelease", true);
+        setVariableValueToObject(cleanLocalRepositoryMojo, "deleteCurrentRelease", true);
         setVariableValueToObject(cleanLocalRepositoryMojo, "releaseRetentionDelay", 2);
         setVariableValueToObject(cleanLocalRepositoryMojo, "releaseVersionsRetention", DESACTIVATIVED);
 		
@@ -178,7 +178,7 @@ public class TestLocalRepositoryMojo extends AbstractMojoTestCase {
     public void testReleaseVersionsRetention() throws Exception
     {
 
-        setVariableValueToObject(cleanLocalRepositoryMojo, "deleteRelease", true);
+        setVariableValueToObject(cleanLocalRepositoryMojo, "deleteCurrentRelease", true);
         setVariableValueToObject(cleanLocalRepositoryMojo, "releaseRetentionDelay", DESACTIVATIVED);
         setVariableValueToObject(cleanLocalRepositoryMojo, "releaseVersionsRetention", 0);
 		
@@ -234,13 +234,65 @@ public class TestLocalRepositoryMojo extends AbstractMojoTestCase {
         
         assertTrue(pluginArtifact.exists()); 
         
-        assertFalse(releaseArtifact1.exists()); // Deleted, this artifact doesn't match with the given RegExp
-        assertFalse(releaseArtifact2.exists()); // Deleted, this artifact doesn't match with the given RegExp
-        assertFalse(releaseArtifact3.exists()); // Deleted, this artifact doesn't match with the given RegExp
+        assertFalse(releaseArtifact1.exists()); // Deleted, this artifact match with the given RegExp
+        assertFalse(releaseArtifact2.exists()); // Deleted, this artifact match with the given RegExp
+        assertFalse(releaseArtifact3.exists()); // Deleted, this artifact match with the given RegExp
 		
-        assertFalse(snapshotArtifact1.exists()); // Deleted, this artifact doesn't match with the given RegExp
-        assertFalse(snapshotArtifact2.exists()); // Deleted, this artifact doesn't match with the given RegExp	
-        assertFalse(snapshotArtifact3.exists()); // Deleted, this artifact doesn't match with the given RegExp
+        assertFalse(snapshotArtifact1.exists()); // Deleted, this artifact match with the given RegExp
+        assertFalse(snapshotArtifact2.exists()); // Deleted, this artifact match with the given RegExp	
+        assertFalse(snapshotArtifact3.exists()); // Deleted, this artifact match with the given RegExp
+    }
+    
+    
+    /**
+     * Test the deleteAllSnapshots and snapshotRetentionDelay option and delegated implementations of the plugin
+     * 
+     * @throws Exception
+     */
+    public void testDeleteAllSnapshotsRetentionDelay() throws Exception
+    {
+        setVariableValueToObject(cleanLocalRepositoryMojo, "deleteAllSnapshots", true);
+        setVariableValueToObject(cleanLocalRepositoryMojo, "snapshotRetentionDelay", 2);
+        setVariableValueToObject(cleanLocalRepositoryMojo, "snapshotVersionsRetention", DESACTIVATIVED);
+		
+        cleanLocalRepositoryMojo.executeCleanLocalRepositoryGoals();
+        
+        assertTrue(pluginArtifact.exists());
+        
+		assertTrue(releaseArtifact1.exists());
+		assertTrue(releaseArtifact2.exists());
+		assertTrue(releaseArtifact3.exists());
+		
+		assertTrue(snapshotArtifact1.exists()); 
+		assertTrue(snapshotArtifact2.exists());
+		assertFalse(snapshotArtifact3.exists()); // Deleted, this snapshot file was older than 2 days
+
+    }
+
+    
+    /**
+     * Test the deleteAllSnapshots and snapshotVersionsRetention option and delegated implementations of the plugin
+     * 
+     * @throws Exception
+     */
+    public void testDeleteAllSnapshotsVersionsRetention() throws Exception
+    {
+        setVariableValueToObject(cleanLocalRepositoryMojo, "deleteAllSnapshots", true);
+        setVariableValueToObject(cleanLocalRepositoryMojo, "snapshotRetentionDelay", DESACTIVATIVED);
+        setVariableValueToObject(cleanLocalRepositoryMojo, "snapshotVersionsRetention", 1);
+		
+        cleanLocalRepositoryMojo.executeCleanLocalRepositoryGoals();
+        
+        assertTrue(pluginArtifact.exists());
+        
+		assertTrue(releaseArtifact1.exists());
+		assertTrue(releaseArtifact2.exists());
+		assertTrue(releaseArtifact3.exists());
+		
+		assertTrue(snapshotArtifact1.exists()); 
+		assertFalse(snapshotArtifact2.exists()); // Deleted, keep only 1 snapshot version
+		assertFalse(snapshotArtifact3.exists()); // Deleted, keep only 1 snapshot version
+
     }
     
     

@@ -21,6 +21,7 @@ import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
@@ -47,24 +48,34 @@ public abstract class AbstractLocalRepositoryMojo extends AbstractMojo
 {
 
 	/**
-	 * Controls whether the plugin tries to delete the project snapshot versions from
+	 * Controls whether the plugin tries to delete the current project snapshot versions from
 	 * the local repository regarding to the snapshotRetentionDelay and
 	 * snapshotVersionsRetention options.
 	 * 
-	 * @parameter expression="${clean-local-repository.deleteSnapshot}" default-value="true"
-	 * @since 1.0
+	 * @parameter expression="${clean-local-repository.deleteCurrentSnapshot}" default-value="true"
+	 * @since 1.1
 	 */
-	private boolean deleteSnapshot;
+	private boolean deleteCurrentSnapshot;
+	
+	/**
+	 * Controls whether the plugin tries to delete all the snapshot versions from
+	 * the local repository regarding to the snapshotRetentionDelay and
+	 * snapshotVersionsRetention options.
+	 * 
+	 * @parameter expression="${clean-local-repository.deleteAllSnapshots}" default-value="false"
+	 * @since 1.1
+	 */
+	private boolean deleteAllSnapshots;
 
 	/**
-	 * Controls whether the plugin tries to delete the project release versions from the
+	 * Controls whether the plugin tries to delete the current project release versions from the
 	 * local repository regarding to the releaseRetentionDelay and
 	 * releaseVersionsRetention options.
 	 * 
-	 * @parameter expression="${clean-local-repository.deleteRelease}" default-value="true"
-	 * @since 1.0
+	 * @parameter expression="${clean-local-repository.deleteCurrentRelease}" default-value="true"
+	 * @since 1.1
 	 */
-	private boolean deleteRelease;
+	private boolean deleteCurrentRelease;
 
 	/**
 	 * Controls the expiration delay (in days) before deleting a snapshot
@@ -191,7 +202,7 @@ public abstract class AbstractLocalRepositoryMojo extends AbstractMojo
 		// Controls whether the plugin try to delete the "Snapshot" version from the local repository
 		// Then list content and delete expired artifacts (based on snapshotRetentionVersion or snapshotRetentionDelay) 
 		
-		if(deleteSnapshot){
+		if(deleteCurrentSnapshot){
 			
 			final List<File> snapshotFoldersList = MavenUtils.getSnapshots(folderList);
 
@@ -203,7 +214,7 @@ public abstract class AbstractLocalRepositoryMojo extends AbstractMojo
 		// As describe before, controls whether the plugin try to delete the "Release" version from the local repository
 		// Then list content and delete expired artifacts (based on releaseRetentionVersion or releaseRetentionDelay) 
 		
-		if(deleteRelease){
+		if(deleteCurrentRelease){
 
 			final List<File> releaseFoldersList = MavenUtils.getReleases(folderList);
 			
@@ -212,12 +223,29 @@ public abstract class AbstractLocalRepositoryMojo extends AbstractMojo
 			deleteArtifactOnDelayExpiration(releaseFoldersList, releaseRetentionDelay); 
 		}
 		
-		// Delete all files from the local repository which match with the given regular expression.
-		// The selection pattern is applied on the file system path from the root of the maven local repository.
-
-		if(deleteFromRegularExpression != null){
+		
+		
+		
+		if(project.isExecutionRoot()){
+ 
+			final List<File> filesList = Tools.listFiles(localRepository);
 			
-			deleteFromRegularExpression(deleteFromRegularExpression, localRepository);	
+			// Delete all files from the local repository which match with the given regular expression.
+			// The selection pattern is applied on the file system path from the root of the maven local repository.
+	
+			if(deleteFromRegularExpression != null){
+				
+				deleteFromRegularExpression(deleteFromRegularExpression, filesList);	
+			}
+			
+			
+			// Controls whether the plugin try to delete all the "Snapshot" version from the local repository
+			// Then list content and delete expired artifacts (based on snapshotRetentionVersion or snapshotRetentionDelay) 
+			
+			if(deleteAllSnapshots){
+					
+				deleteAllSnapshots(filesList);
+			}
 		}
 		
 		
@@ -229,6 +257,9 @@ public abstract class AbstractLocalRepositoryMojo extends AbstractMojo
 		}
 		
 	}
+
+
+
 
 
 	/**
@@ -275,20 +306,37 @@ public abstract class AbstractLocalRepositoryMojo extends AbstractMojo
 	
 	
 	/**
+	 * Execute delete sub-routine according to the deleteAllSnapshots options which controls whether the plugin
+     * have to purge all the snapshots version from the whole local maven repository.
+     * 
+     * This implementation handle the snapshotVersionsRetention and snapshotVersionsRetention options.
+     * 
+	 * @param filesList
+	 */
+	private void deleteAllSnapshots(final List<File> filesList) {
+		Set<File> artifact = MavenUtils.getSnapshotArtifacts(filesList);
+
+		for (File artifactFoldersWithSnapshot : artifact) {
+						
+			deleteArtifactOnVersionExpiration(MavenUtils.getSnapshots(artifactFoldersWithSnapshot), snapshotVersionsRetention); 
+			
+			deleteArtifactOnDelayExpiration(MavenUtils.getSnapshots(artifactFoldersWithSnapshot), snapshotRetentionDelay); 
+			
+		}
+	}
+
+    
+	/**
 	 * Delete all files  from the local repository which match with the given regular expression (@see Pattern definition).
 	 * The selection pattern is applied on the file system path from the root of the maven local repository.
 	 * 
 	 * @param deleteFromRegularExpression
 	 * @param repositoryPath
 	 */
-    private void deleteFromRegularExpression(final String deleteFromRegularExpression, final File repositoryPath) {
+    private void deleteFromRegularExpression(final String deleteFromRegularExpression, final List<File> filesList) {
 
-    	if(project.isExecutionRoot()){
-    		
     		final Pattern pattern = Pattern.compile(deleteFromRegularExpression);
-			
-    		final List<File> filesList = Tools.listFiles(repositoryPath);
-			
+
 	    	for (final File file : filesList) {
 	
 	        	if(Tools.matchPatternIgnoreCase(pattern, file.getAbsolutePath()))
@@ -298,7 +346,7 @@ public abstract class AbstractLocalRepositoryMojo extends AbstractMojo
 	    			if(isDeleteModeActivated()){ Tools.deleteQuietly(file, executeDeleteOnExit, getLog()); }
 	        	}
 			}
-    	}
+    	
     }
     
     
