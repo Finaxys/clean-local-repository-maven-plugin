@@ -52,7 +52,7 @@ public abstract class AbstractLocalRepositoryMojo extends AbstractMojo
 	 * the local repository regarding to the snapshotRetentionDelay and
 	 * snapshotVersionsRetention options.
 	 * 
-	 * @parameter expression="${clean-local-repository.deleteCurrentSnapshot}" default-value="true"
+	 * @parameter expression="${clean-local-repository.deleteCurrentSnapshot}" default-value="false"
 	 * @since 1.1
 	 */
 	private boolean deleteCurrentSnapshot;
@@ -72,7 +72,7 @@ public abstract class AbstractLocalRepositoryMojo extends AbstractMojo
 	 * local repository regarding to the releaseRetentionDelay and
 	 * releaseVersionsRetention options.
 	 * 
-	 * @parameter expression="${clean-local-repository.deleteCurrentRelease}" default-value="true"
+	 * @parameter expression="${clean-local-repository.deleteCurrentRelease}" default-value="false"
 	 * @since 1.1
 	 */
 	private boolean deleteCurrentRelease;
@@ -81,7 +81,7 @@ public abstract class AbstractLocalRepositoryMojo extends AbstractMojo
 	 * Controls the expiration delay (in days) before deleting a snapshot
 	 * version.
 	 * 
-	 * @parameter expression="${clean-local-repository.snapshotRetentionDelay}" default-value="7"
+	 * @parameter expression="${clean-local-repository.snapshotRetentionDelay}" default-value="-1"
 	 * @since 1.0
 	 */
 	private int snapshotRetentionDelay;
@@ -90,7 +90,7 @@ public abstract class AbstractLocalRepositoryMojo extends AbstractMojo
 	 * Controls the number of different snapshot versions to keep without
 	 * deletion.
 	 * 
-	 * @parameter expression="${clean-local-repository.snapshotVersionsRetention}" default-value="1"
+	 * @parameter expression="${clean-local-repository.snapshotVersionsRetention}" default-value="-1"
 	 * @since 1.0
 	 */
 	private int snapshotVersionsRetention;
@@ -99,7 +99,7 @@ public abstract class AbstractLocalRepositoryMojo extends AbstractMojo
 	 * Controls the expiration delay (in days) before deleting a release
 	 * version.
 	 * 
-	 * @parameter expression="${clean-local-repository.releaseRetentionDelay}" default-value="7"
+	 * @parameter expression="${clean-local-repository.releaseRetentionDelay}" default-value="-1"
 	 * @since 1.0
 	 */
 	private int releaseRetentionDelay;
@@ -107,7 +107,7 @@ public abstract class AbstractLocalRepositoryMojo extends AbstractMojo
 	/**
 	 * Controls the number of different release versions to keep without deletion.
 	 * 
-	 * @parameter expression="${clean-local-repository.releaseVersionsRetention}" default-value="1"
+	 * @parameter expression="${clean-local-repository.releaseVersionsRetention}" default-value="-1"
 	 * @since 1.0
 	 */
 	private int releaseVersionsRetention;
@@ -224,8 +224,6 @@ public abstract class AbstractLocalRepositoryMojo extends AbstractMojo
 		}
 		
 		
-		
-		
 		if(project.isExecutionRoot()){
  
 			final List<File> filesList = Tools.listFiles(localRepository);
@@ -246,22 +244,19 @@ public abstract class AbstractLocalRepositoryMojo extends AbstractMojo
 					
 				deleteAllSnapshots(filesList);
 			}
-		}
+	
 		
-		
-		// Delete all the empty folders from the local repository.
-
-		if(deleteEmptyFolders){
-			
-			deleteEmptyFolders(localRepository); 
+			// Delete all the empty folders from the local repository.
+	
+			if(deleteEmptyFolders){
+				
+				deleteEmptyFolders(localRepository); 
+			}
 		}
 		
 	}
 
-
-
-
-
+	
 	/**
 	 * Execute delete sub-routine according to the given retentionDelay options which controls the expiration delay 
 	 * (in days) before deleting a version.
@@ -271,7 +266,7 @@ public abstract class AbstractLocalRepositoryMojo extends AbstractMojo
 	 */
 	private void deleteArtifactOnDelayExpiration(final List<File> foldersList, final int retentionDelay) {
 		
-		for (int i = 0; i < foldersList.size(); i++) {
+		for (int i = 0; retentionDelay >= 0 && i < foldersList.size(); i++) {
 
 			final File artifactFolder = foldersList.get(i);
 
@@ -294,7 +289,7 @@ public abstract class AbstractLocalRepositoryMojo extends AbstractMojo
 	 */
 	private void deleteArtifactOnVersionExpiration(final List<File> foldersList, final int retentionVersion) {
 		
-		for (int i = retentionVersion; i < foldersList.size(); i++) {
+		for (int i = retentionVersion; retentionVersion >= 0 && i < foldersList.size(); i++) {
 			
 			final File artifactFolder = foldersList.get(i);
 
@@ -314,6 +309,7 @@ public abstract class AbstractLocalRepositoryMojo extends AbstractMojo
 	 * @param filesList
 	 */
 	private void deleteAllSnapshots(final List<File> filesList) {
+		
 		Set<File> artifact = MavenUtils.getSnapshotArtifacts(filesList);
 
 		for (File artifactFoldersWithSnapshot : artifact) {
@@ -360,25 +356,20 @@ public abstract class AbstractLocalRepositoryMojo extends AbstractMojo
 	 * @param repositoryPath 
 	 */
 	private void deleteEmptyFolders(final File repositoryPath) {
+
+		final List<File> foldersList = Tools.listFolders(repositoryPath);
+				
+		Collections.reverse(foldersList);
 		
-		if (project.isExecutionRoot()) {
+		for (int i = 0; i < foldersList.size(); i++) {
 
-			final List<File> foldersList = Tools.listFolders(repositoryPath);
-					
-			Collections.reverse(foldersList);
-			
-			for (int i = 0; i < foldersList.size(); i++) {
+			final File folder = foldersList.get(i);
 
-				final File folder = foldersList.get(i);
+			if (Tools.isNullOrEmpty(Tools.listFiles(folder))) {
 
-				if (Tools.isNullOrEmpty(Tools.listFiles(folder))) {
+				getLog().info((isDeleteModeActivated() ? Enumeres.LOG.DELETE_EMPTY : Enumeres.LOG.LIST_EMPTY) + folder.getAbsolutePath());
 
-					getLog().info((isDeleteModeActivated() ? Enumeres.LOG.DELETE_EMPTY : Enumeres.LOG.LIST_EMPTY) + folder.getAbsolutePath());
-
-					if (isDeleteModeActivated()) {
-						Tools.deleteQuietly(folder, executeDeleteOnExit, getLog());
-					}
-				}
+				if (isDeleteModeActivated()) { Tools.deleteQuietly(folder, executeDeleteOnExit, getLog()); }
 			}
 		}
 	}
@@ -465,25 +456,25 @@ public abstract class AbstractLocalRepositoryMojo extends AbstractMojo
 		}
 		
 		
-		if(snapshotRetentionDelay < 0)
+		if(snapshotRetentionDelay < -1)
 		{
 			throw new MojoFailureException( Enumeres.EXCEPTION.UNEXPECTED_PARAMETER + Enumeres.MOJO_OPTION.SNAPSHOT_RETENTION_DELAY 
 										  + Enumeres.EXCEPTION.NEGATIVE_NUMBER + snapshotRetentionDelay);
 		}
 		
-		if(snapshotVersionsRetention < 0)
+		if(snapshotVersionsRetention < -1)
 		{
 			throw new MojoFailureException( Enumeres.EXCEPTION.UNEXPECTED_PARAMETER + Enumeres.MOJO_OPTION.SNAPSHOT_VERSIONS_RETENTION
 										  + Enumeres.EXCEPTION.NEGATIVE_NUMBER + snapshotVersionsRetention);
 		}
 		
-		if(releaseRetentionDelay < 0)
+		if(releaseRetentionDelay < -1)
 		{
 			throw new MojoFailureException( Enumeres.EXCEPTION.UNEXPECTED_PARAMETER + Enumeres.MOJO_OPTION.SNAPSHOT_RETENTION_DELAY 
 										  + Enumeres.EXCEPTION.NEGATIVE_NUMBER + releaseRetentionDelay);
 		}
 		
-		if(releaseVersionsRetention < 0)
+		if(releaseVersionsRetention < -1)
 		{
 			throw new MojoFailureException( Enumeres.EXCEPTION.UNEXPECTED_PARAMETER + Enumeres.MOJO_OPTION.SNAPSHOT_VERSIONS_RETENTION
 										  + Enumeres.EXCEPTION.NEGATIVE_NUMBER + releaseVersionsRetention);
@@ -498,6 +489,20 @@ public abstract class AbstractLocalRepositoryMojo extends AbstractMojo
 		{
 			throw new MojoFailureException( Enumeres.EXCEPTION.UNEXPECTED_PARAMETER + Enumeres.MOJO_OPTION.DELETE_FROM_REGULAR_EXPRESSION
 					  					  + Enumeres.EXCEPTION.PATTERN_SYNTAX_EXCEPTION + deleteFromRegularExpression, e);
+		}
+		
+		// Initialization of a default plugin retention behavior if, and only if, all the retention options and the RegExp option are unvalued
+		// So without any argument, the default behavior is to resolve the current project artifacts tree, then delete all version excepting current one from the local repository 
+		
+		if(deleteFromRegularExpression == null 
+		&& snapshotRetentionDelay == -1 && snapshotVersionsRetention == -1  
+		&& releaseRetentionDelay  == -1 && releaseVersionsRetention  == -1)
+		{			
+			snapshotRetentionDelay    = releaseRetentionDelay    = 7;
+			snapshotVersionsRetention = releaseVersionsRetention = 1;
+			
+			deleteCurrentSnapshot = true;
+			deleteCurrentRelease = true;
 		}
 		
 		return localRepositoryFolder;

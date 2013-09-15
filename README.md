@@ -61,7 +61,7 @@ Configure the plugin something like this if you intend to bind it to execute alo
             </goals>
             <configuration>
               <!-- Some sample configurations -->
-              <deleteRelease>false</deleteRelease>
+              <deleteCurrentRelease>false</deleteCurrentRelease>
               <snapshotRetentionDelay>3</snapshotRetentionDelay>
               <!-- other configurations here -->
             </configuration>
@@ -78,7 +78,7 @@ Configure the plugin something like this if you intend to bind it to execute alo
 If you intend to configure this mojo for execution on a command line (with option examples) :
 
 ```
-mvn clean-local-repository:clean -Dclean-local-repository.deleteRelease=false -Dclean-local-
+mvn clean-local-repository:clean -Dclean-local-repository.deleteCurrentRelease=false -Dclean-local-
 repository.snapshotRetentionDelay=3
 ```
 

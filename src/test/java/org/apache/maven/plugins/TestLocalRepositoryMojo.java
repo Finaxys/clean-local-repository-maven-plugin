@@ -38,9 +38,9 @@ public class TestLocalRepositoryMojo extends AbstractMojoTestCase {
 	
 	private static final String TEST_M2_REPO_PATH = "/target/testLocalMavenRepository";
 	
-	/**  High value parameter allows to disable parameters in this test case context **/
+	/**  Allows to disable parameters in this test case context **/
 	
-	private static final int DESACTIVATIVED = 10000;
+	private static final int DESACTIVATIVED = -1;
 	
 	
 	private File testM2Repo;
